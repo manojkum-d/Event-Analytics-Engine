@@ -1,18 +1,33 @@
 import { Request, Response, NextFunction } from 'express';
 import passport from 'passport';
-import * as userRepository from '../repositories/users/index.js';
-import * as apiKeyRepository from '../repositories/apiKey/index.js';
-import { asyncHandler } from '../shared/utils/asyncHandler/index.js';
-import { httpResponse } from '../shared/utils/httpResponse/index.js';
-import CustomError from '../shared/utils/customError/index.js';
+import * as userRepository from '../repositories/users/index';
+import * as apiKeyRepository from '../repositories/apiKey/index';
+import { asyncHandler } from '../shared/utils/asyncHandler/index';
+import { httpResponse } from '../shared/utils/httpResponse/index';
+import CustomError from '../shared/utils/customError/index';
+import { envConfig } from '../shared/config/envConfig';
 
 /**
- * Initiate Google OAuth authentication
+ * Get Google OAuth URL for client-side redirection
  */
-export const googleAuth = (req: Request, res: Response, next: NextFunction) => {
-  passport.authenticate('google', {
-    scope: ['profile', 'email'],
-  })(req, res, next);
+export const googleAuth = (req: Request, res: Response) => {
+  // Generate the authentication URL
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&redirect_uri=${encodeURIComponent(
+    envConfig.googleCallbackUrl
+  )}&scope=${encodeURIComponent('profile email')}&client_id=${encodeURIComponent(
+    envConfig.googleClientId
+  )}`;
+
+  // Return the URL instead of redirecting
+  res.json(
+    httpResponse({
+      status: 200,
+      message: 'Google OAuth URL generated successfully',
+      data: {
+        authUrl,
+      },
+    })
+  );
 };
 
 /**

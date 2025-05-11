@@ -45,12 +45,3 @@ export const validateApiKey = async (
     next(error);
   }
 };
-
-// Extend Express Request type definition
-declare global {
-  namespace Express {
-    interface Request {
-      apiKey?: any;
-    }
-  }
-}

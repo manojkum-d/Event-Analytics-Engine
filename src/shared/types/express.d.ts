@@ -1,4 +1,4 @@
-import { User, ApiKey } from '../models/index';
+import { ApiKey } from '../models';
 
 declare global {
   namespace Express {
@@ -19,3 +19,6 @@ declare global {
     }
   }
 }
+
+// Export an empty object to make this a module
+export {};

@@ -14,6 +14,10 @@ const _DB_USER = getEnvVar('DB_USER');
 const _REDIS_HOST = getEnvVar('REDIS_HOST');
 const _REDIS_PORT = getEnvVarAsNumber('REDIS_PORT');
 const _API_KEY_EXPIRATION_DAYS = getEnvVarAsNumber('API_KEY_EXPIRATION_DAYS');
+const _GOOGLE_CLIENT_ID = getEnvVar('GOOGLE_CLIENT_ID');
+const _GOOGLE_CLIENT_SECRET = getEnvVar('GOOGLE_CLIENT_SECRET');
+const _GOOGLE_CALLBACK_URL = getEnvVar('GOOGLE_CALLBACK_URL');
+const _SESSION_SECRET = getEnvVar('SESSION_SECRET');
 
 export const envConfig = {
   get nodeEnv() {
@@ -42,5 +46,17 @@ export const envConfig = {
   },
   get redisPort() {
     return _REDIS_PORT;
+  },
+  get googleClientId() {
+    return _GOOGLE_CLIENT_ID;
+  },
+  get googleClientSecret() {
+    return _GOOGLE_CLIENT_SECRET;
+  },
+  get googleCallbackUrl() {
+    return _GOOGLE_CALLBACK_URL;
+  },
+  get sessionSecret() {
+    return _SESSION_SECRET;
   },
 };
