@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - '3000:3000'
+    depends_on:
+      - redis
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5432
+      - DB_NAME=eventAnalytics
+      - DB_USER=manoj
+      - REDIS_HOST=127.0.0.1
+      - REDIS_PORT=6379
+    volumes:
+      - ./src:/usr/src/app/src
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    command: pnpm dev
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:
