@@ -13,10 +13,14 @@ const _DB_NAME = getEnvVar('DB_NAME');
 const _DB_USER = getEnvVar('DB_USER');
 const _REDIS_HOST = getEnvVar('REDIS_HOST');
 const _REDIS_PORT = getEnvVarAsNumber('REDIS_PORT');
+const _API_KEY_EXPIRATION_DAYS = getEnvVarAsNumber('API_KEY_EXPIRATION_DAYS');
 
 export const envConfig = {
   get nodeEnv() {
     return _NODE_ENV;
+  },
+  get apiKeyExpirationDays() {
+    return _API_KEY_EXPIRATION_DAYS;
   },
   get port() {
     return _PORT;

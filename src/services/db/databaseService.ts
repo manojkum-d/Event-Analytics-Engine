@@ -13,6 +13,10 @@ export type QueryOptions<T extends Model> = Omit<FindOptions<any>, 'where'> & {
   where?: Partial<T>;
 };
 
+/**
+ * Database service class
+ * @description This class provides a set of static methods for performing database operations.
+ */
 class DatabaseService {
   /**
    * Find a record by primary key
