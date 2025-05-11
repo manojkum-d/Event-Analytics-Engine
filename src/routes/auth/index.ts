@@ -5,12 +5,14 @@ import {
   authSuccess,
   getCurrentUser,
   logout,
+} from '../../controllers/authController';
+import { isAuthenticated } from '../../middlewares/authMiddleware';
+import {
   createApiKey,
   getApiKeys,
   revokeApiKey,
   regenerateApiKey,
-} from '../../controllers/authController';
-import { isAuthenticated } from '../../middlewares/authMiddleware';
+} from '../../controllers/apiKeyController';
 
 const router = express.Router();
 
@@ -250,10 +252,5 @@ router.get('/logout', logout);
  *         description: Not authenticated
  */
 router.post('/register', isAuthenticated, createApiKey);
-
-// Add similar JSDoc documentation for the remaining endpoints
-router.get('/api-key', isAuthenticated, getApiKeys);
-router.post('/revoke/:id', isAuthenticated, revokeApiKey);
-router.post('/regenerate/:id', isAuthenticated, regenerateApiKey);
 
 export default router;
