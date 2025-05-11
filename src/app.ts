@@ -1,8 +1,8 @@
 import express, { NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { exceptionHandler } from './src/middlewares/exceptionhandler/index.js';
-import router from './src/routes/index.js';
+import { exceptionHandler } from './middlewares/exceptionhandler/index';
+import router from './routes/index';
 
 const app = express();
 

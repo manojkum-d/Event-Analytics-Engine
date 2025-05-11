@@ -1,4 +1,4 @@
-import { ResponseObject, ResponsePayload } from './interface/index.js';
+import { ResponseObject, ResponsePayload } from './interface/index';
 
 /**
  * Utility function to create a response object.

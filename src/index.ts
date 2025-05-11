@@ -1,6 +1,6 @@
-import app from './app.js';
-import { connectDb } from './src/shared/config/dbConfig.js';
-import { envConfig } from './src/shared/config/envConfig.js';
+import app from './app';
+import { connectDb } from './shared/config/dbConfig';
+import { envConfig } from './shared/config/envConfig';
 
 const PORT = envConfig.port;
 // Function to start the server

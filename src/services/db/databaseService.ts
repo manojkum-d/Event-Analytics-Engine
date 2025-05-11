@@ -7,7 +7,7 @@ import {
   DestroyOptions,
   CountOptions,
 } from 'sequelize';
-import CustomError from '../../shared/utils/customError/index.js';
+import CustomError from '../../shared/utils/customError/index';
 
 export type QueryOptions<T extends Model> = Omit<FindOptions<any>, 'where'> & {
   where?: Partial<T>;

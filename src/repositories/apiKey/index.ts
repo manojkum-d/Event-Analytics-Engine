@@ -1,10 +1,10 @@
 import { v4 as uuidV4 } from 'uuid';
 import moment from 'moment';
-import DatabaseService, { QueryOptions } from '../../services/db/databaseService.js';
-import CustomError from '../../shared/utils/customError/index.js';
-import { envConfig } from '../../shared/config/envConfig.js';
-import { ApiKey, User } from '../../shared/models/index.js';
-import { isIpInCidr } from '../../shared/helper/ipHelpers.js';
+import DatabaseService, { QueryOptions } from '../../services/db/databaseService';
+import CustomError from '../../shared/utils/customError/index';
+import { envConfig } from '../../shared/config/envConfig';
+import { ApiKey, User } from '../../shared/models/index';
+import { isIpInCidr } from '../../shared/helper/ipHelpers';
 
 // Find API key by id
 export const findApiKeyById = async (

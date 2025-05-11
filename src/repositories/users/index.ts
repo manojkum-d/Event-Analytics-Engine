@@ -1,7 +1,7 @@
-import User from '../../shared/models/User.js';
-import DatabaseService, { QueryOptions } from '../../services/db/databaseService.js';
-import CustomError from '../../shared/utils/customError/index.js';
-import { GoogleUserData } from './interface/index.js';
+import User from '../../shared/models/User';
+import DatabaseService, { QueryOptions } from '../../services/db/databaseService';
+import CustomError from '../../shared/utils/customError/index';
+import { GoogleUserData } from './interface/index';
 
 // Find user by id
 export const findUserById = async (

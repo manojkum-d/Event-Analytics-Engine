@@ -1,4 +1,4 @@
-import { User, ApiKey } from '../models/index.js';
+import { User, ApiKey } from '../models/index';
 
 declare global {
   namespace Express {

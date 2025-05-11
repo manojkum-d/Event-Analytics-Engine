@@ -1,4 +1,4 @@
-import { ApiKey, Event, EventSummary, User, UserStats } from './index.js';
+import { ApiKey, Event, EventSummary, User, UserStats } from './index';
 
 // User to ApiKey (one-to-many)
 User.hasMany(ApiKey, {

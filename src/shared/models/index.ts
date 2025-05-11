@@ -1,7 +1,7 @@
-import ApiKey from './ApiKey.js';
-import EventSummary from './EventSummary.js';
-import User from './User.js';
-import UserStats from './UserStats.js';
-import Event from './Event.js';
+import ApiKey from './ApiKey';
+import EventSummary from './EventSummary';
+import User from './User';
+import UserStats from './UserStats';
+import Event from './Event';
 
 export { ApiKey, EventSummary, User, UserStats, Event };

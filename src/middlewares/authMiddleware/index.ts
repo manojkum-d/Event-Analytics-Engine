@@ -1,9 +1,9 @@
 // src/middleware/authMiddleware.ts
 import { Request, Response, NextFunction } from 'express';
-import CustomError from '../../shared/utils/customError/index.js';
-import * as apiKeyRepository from '../../repositories/apiKey/index.js';
+import CustomError from '../../shared/utils/customError/index';
+import * as apiKeyRepository from '../../repositories/apiKey/index';
 
-/**
+/*
  * Middleware to check if user is authenticated via session
  */
 export const isAuthenticated = (req: Request, res: Response, next: NextFunction): void => {
