@@ -1,7 +1,6 @@
 import { Sequelize } from 'sequelize';
 
 import { envConfig } from './envConfig.js';
-import { initializeAssociations } from '../models/association.js';
 
 /**
  * Sequelize instance for database connection
@@ -30,7 +29,8 @@ export const connectDb = async (): Promise<void> => {
   try {
     await sequelize.authenticate();
     console.info(`✔ Database connection established successfully on host: ${envConfig.dbHost}`);
-
+    // This prevents circular dependencies
+    const { initializeAssociations } = await import('../models/association.js');
     // Initialize model associations
     initializeAssociations();
     // Sync models with database (in development only)
@@ -43,3 +43,5 @@ export const connectDb = async (): Promise<void> => {
     process.exit(1);
   }
 };
+
+export default sequelize;

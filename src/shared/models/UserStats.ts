@@ -7,7 +7,7 @@ import {
 } from 'sequelize';
 import { v4 as uuidV4 } from 'uuid';
 
-import { sequelize } from '../config/dbConfig.js';
+import sequelize from '../config/dbConfig.js';
 
 class UserStats extends Model<InferAttributes<UserStats>, InferCreationAttributes<UserStats>> {
   declare id: CreationOptional<string>;

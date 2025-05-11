@@ -6,8 +6,7 @@ import {
   InferCreationAttributes,
 } from 'sequelize';
 import { v4 as uuidV4 } from 'uuid';
-
-import { sequelize } from '../config/dbConfig.js';
+import sequelize from '../config/dbConfig.js';
 
 class ApiKey extends Model<InferAttributes<ApiKey>, InferCreationAttributes<ApiKey>> {
   declare id: CreationOptional<string>;
