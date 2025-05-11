@@ -1,4 +1,8 @@
-class CustomError extends Error {
+/**
+ * Custom error class that extends the built-in Error class.
+ * Provides a status code and operational flag for error handling.
+ */
+export default class CustomError extends Error {
   public statusCode: number;
   public isOperational: boolean;
 
@@ -11,5 +15,3 @@ class CustomError extends Error {
     Error.captureStackTrace(this, this.constructor);
   }
 }
-
-export default CustomError;

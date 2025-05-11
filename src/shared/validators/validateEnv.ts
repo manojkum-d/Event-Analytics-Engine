@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import CustomError from '../utils/customError.js';
+import CustomError from '../utils/customError/index.js';
 
 dotenv.config();
 
