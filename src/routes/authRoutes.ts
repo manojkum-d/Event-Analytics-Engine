@@ -7,38 +7,79 @@ import {
   logout,
 } from '../controllers/auth';
 import { isAuthenticated } from '../middlewares/authMiddleware';
-import { registerApp } from '../controllers/app';
+import { getAppApiKey, registerApp, revokeAppApiKey } from '../controllers/app';
 import passport from 'passport';
+import { getApiKeys } from '../controllers/apiKey';
 
 const router = express.Router();
 
 /**
  * @swagger
+ * components:
+ *   securitySchemes:
+ *     BearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ *   schemas:
+ *     User:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         email:
+ *           type: string
+ *           format: email
+ *         firstName:
+ *           type: string
+ *         lastName:
+ *           type: string
+ *         profileImage:
+ *           type: string
+ *           format: uri
+ *     ApiKey:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         key:
+ *           type: string
+ *         appId:
+ *           type: string
+ *           format: uuid
+ *         isActive:
+ *           type: boolean
+ *         expiresAt:
+ *           type: string
+ *           format: date-time
+ *         ipRestrictions:
+ *           type: array
+ *           items:
+ *             type: string
+ *             format: ipv4
+ */
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Authentication
+ *     description: User authentication endpoints
+ *   - name: API Key Management
+ *     description: API key and application management endpoints
+ */
+
+/**
+ * @swagger
  * /auth/google:
  *   get:
- *     summary: Get Google OAuth URL
+ *     summary: Initiate Google OAuth authentication
  *     tags: [Authentication]
- *     description: Returns Google OAuth URL for client-side authentication
+ *     description: Redirects to Google OAuth login page
  *     responses:
- *       200:
- *         description: Google OAuth URL
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: number
- *                   example: 200
- *                 message:
- *                   type: string
- *                   example: Google OAuth URL generated successfully
- *                 data:
- *                   type: object
- *                   properties:
- *                     authUrl:
- *                       type: string
- *                       example: https://accounts.google.com/o/oauth2/v2/auth?response_type=code&...
+ *       302:
+ *         description: Redirects to Google login
  */
 router.get(
   '/google',
@@ -63,7 +104,7 @@ router.get(
  *         description: OAuth authorization code
  *     responses:
  *       302:
- *         description: Redirects to success page after successful authentication
+ *         description: Redirects to success page or login page
  */
 router.get(
   '/google/callback',
@@ -90,7 +131,7 @@ router.get(
  *               type: object
  *               properties:
  *                 status:
- *                   type: number
+ *                   type: integer
  *                   example: 200
  *                 message:
  *                   type: string
@@ -99,23 +140,7 @@ router.get(
  *                   type: object
  *                   properties:
  *                     user:
- *                       type: object
- *                       properties:
- *                         id:
- *                           type: string
- *                           example: 123e4567-e89b-12d3-a456-426614174000
- *                         email:
- *                           type: string
- *                           example: user@example.com
- *                         firstName:
- *                           type: string
- *                           example: John
- *                         lastName:
- *                           type: string
- *                           example: Doe
- *                         profileImage:
- *                           type: string
- *                           example: https://example.com/profile.jpg
+ *                       $ref: '#/components/schemas/User'
  */
 router.get('/success', authSuccess);
 
@@ -125,9 +150,9 @@ router.get('/success', authSuccess);
  *   get:
  *     summary: Get current user info
  *     tags: [Authentication]
- *     description: Returns details of the currently authenticated user
  *     security:
  *       - BearerAuth: []
+ *     description: Returns details of the currently authenticated user
  *     responses:
  *       200:
  *         description: User details retrieved successfully
@@ -137,32 +162,13 @@ router.get('/success', authSuccess);
  *               type: object
  *               properties:
  *                 status:
- *                   type: number
+ *                   type: integer
  *                   example: 200
- *                 message:
- *                   type: string
- *                   example: User details retrieved successfully
  *                 data:
  *                   type: object
  *                   properties:
  *                     user:
- *                       type: object
- *                       properties:
- *                         id:
- *                           type: string
- *                           example: 123e4567-e89b-12d3-a456-426614174000
- *                         email:
- *                           type: string
- *                           example: user@example.com
- *                         firstName:
- *                           type: string
- *                           example: John
- *                         lastName:
- *                           type: string
- *                           example: Doe
- *                         profileImage:
- *                           type: string
- *                           example: https://example.com/profile.jpg
+ *                       $ref: '#/components/schemas/User'
  *       401:
  *         description: Not authenticated
  */
@@ -184,7 +190,7 @@ router.get('/me', isAuthenticated, getCurrentUser);
  *               type: object
  *               properties:
  *                 status:
- *                   type: number
+ *                   type: integer
  *                   example: 200
  *                 message:
  *                   type: string
@@ -196,9 +202,8 @@ router.get('/logout', logout);
  * @swagger
  * /auth/register:
  *   post:
- *     summary: Create a new API key
+ *     summary: Register a new application and generate API key
  *     tags: [API Key Management]
- *     description: Creates a new API key for the authenticated user
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -218,47 +223,136 @@ router.get('/logout', logout);
  *                 example: Analytics for my personal website
  *               appUrl:
  *                 type: string
+ *                 format: uri
  *                 example: https://mywebsite.com
  *               ipRestrictions:
  *                 type: array
  *                 items:
  *                   type: string
+ *                   format: ipv4
  *                 example: ["192.168.1.1"]
  *     responses:
  *       201:
- *         description: API key created successfully
+ *         description: Application registered and API key generated successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
  *                 status:
- *                   type: number
+ *                   type: integer
  *                   example: 201
  *                 message:
  *                   type: string
- *                   example: API key created successfully
+ *                   example: API key generated successfully
  *                 data:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                       example: 123e4567-e89b-12d3-a456-426614174000
- *                     key:
- *                       type: string
- *                       example: YWJjZGVmMTIzNDU2Nzg5MA==
- *                     appName:
- *                       type: string
- *                       example: My Website
- *                     expiresAt:
- *                       type: string
- *                       format: date-time
- *                       example: 2023-12-31T23:59:59Z
+ *                   $ref: '#/components/schemas/ApiKey'
  *       400:
- *         description: App name is required
+ *         description: Invalid request parameters
  *       401:
- *         description: Not authenticated
+ *         description: Unauthorized
  */
 router.post('/register', isAuthenticated, registerApp);
+
+/**
+ * @swagger
+ * /auth/api-keys:
+ *   get:
+ *     summary: Get all API keys for current user
+ *     tags: [API Key Management]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of API keys retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/ApiKey'
+ *       401:
+ *         description: Unauthorized
+ */
+router.use('/api-keys', isAuthenticated, getApiKeys);
+
+/**
+ * @swagger
+ * /auth/{appId}/api-key:
+ *   get:
+ *     summary: Get API key for specific application
+ *     tags: [API Key Management]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: appId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Application ID
+ *     responses:
+ *       200:
+ *         description: API key retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 data:
+ *                   $ref: '#/components/schemas/ApiKey'
+ *       404:
+ *         description: API key not found
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/:appId/api-key', isAuthenticated, getAppApiKey);
+
+/**
+ * @swagger
+ * /auth/{appId}/revoke-key:
+ *   post:
+ *     summary: Revoke API key for specific application
+ *     tags: [API Key Management]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: appId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Application ID
+ *     responses:
+ *       200:
+ *         description: API key revoked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: API key revoked successfully
+ *       404:
+ *         description: API key not found
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/:appId/revoke-key', isAuthenticated, revokeAppApiKey);
 
 export default router;
