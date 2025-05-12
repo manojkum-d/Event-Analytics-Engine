@@ -72,12 +72,21 @@ export const revokeApiKey = asyncHandler(async (req: Request, res: Response) => 
     throw new CustomError('API key ID is required', 400);
   }
 
+  // Get the API key before revoking it
+  const apiKey = await apiKeyRepository.findApiKeyById(id);
+
+  // Revoke the key
   await apiKeyRepository.revokeApiKey(id, req.user.id);
 
   res.json(
     httpResponse({
       status: 200,
       message: 'API key revoked successfully',
+      data: {
+        id: apiKey.id,
+        appName: apiKey.appName,
+        revokedAt: new Date(),
+      },
     })
   );
 }, 'revokeApiKey');
