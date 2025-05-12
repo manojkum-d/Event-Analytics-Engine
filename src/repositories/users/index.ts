@@ -1,5 +1,5 @@
 import User from '../../shared/models/User';
-import DatabaseService, { QueryOptions } from '../../services/db/databaseService';
+import DatabaseService, { QueryOptions } from '../../shared/utils/db/databaseService';
 import CustomError from '../../shared/utils/customError/index';
 import { GoogleUserData } from './interface/index';
 

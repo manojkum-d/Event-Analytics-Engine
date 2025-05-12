@@ -1,10 +1,10 @@
 import { v4 as uuidV4 } from 'uuid';
 import moment from 'moment';
-import DatabaseService, { QueryOptions } from '../../services/db/databaseService';
-import CustomError from '../../shared/utils/customError';
-import { envConfig } from '../../shared/config/envConfig';
-import { ApiKey, User } from '../../shared/models';
-import { isIpInCidr } from '../../shared/helper/ipHelpers';
+import DatabaseService, { QueryOptions } from '../../../shared/utils/db/databaseService';
+import CustomError from '../../../shared/utils/customError';
+import { envConfig } from '../../../shared/config/envConfig';
+import { ApiKey, User } from '../../../shared/models';
+import { isIpInCidr } from '../../../shared/helper/ipHelpers';
 
 /**
  * Find API key by id
