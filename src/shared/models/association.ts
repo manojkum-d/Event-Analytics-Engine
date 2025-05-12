@@ -1,15 +1,27 @@
-import { ApiKey, Event, EventSummary, User, UserStats } from './index';
+import { ApiKey, App, Event, User } from './index';
 
-// User to ApiKey (one-to-many)
-User.hasMany(ApiKey, {
+// User to App (one-to-many)
+User.hasMany(App, {
   foreignKey: 'userId',
-  as: 'apiKeys',
+  as: 'apps',
   onDelete: 'CASCADE',
 });
 
-ApiKey.belongsTo(User, {
+App.belongsTo(User, {
   foreignKey: 'userId',
   as: 'user',
+});
+
+// App to ApiKey (one-to-one)
+App.hasOne(ApiKey, {
+  foreignKey: 'appId',
+  as: 'apiKey',
+  onDelete: 'CASCADE',
+});
+
+ApiKey.belongsTo(App, {
+  foreignKey: 'appId',
+  as: 'app',
 });
 
 // ApiKey to Event (one-to-many)
@@ -20,30 +32,6 @@ ApiKey.hasMany(Event, {
 });
 
 Event.belongsTo(ApiKey, {
-  foreignKey: 'apiKeyId',
-  as: 'apiKey',
-});
-
-// ApiKey to EventSummary (one-to-many)
-ApiKey.hasMany(EventSummary, {
-  foreignKey: 'apiKeyId',
-  as: 'eventSummaries',
-  onDelete: 'CASCADE',
-});
-
-EventSummary.belongsTo(ApiKey, {
-  foreignKey: 'apiKeyId',
-  as: 'apiKey',
-});
-
-// ApiKey to UserStats (one-to-many)
-ApiKey.hasMany(UserStats, {
-  foreignKey: 'apiKeyId',
-  as: 'userStats',
-  onDelete: 'CASCADE',
-});
-
-UserStats.belongsTo(ApiKey, {
   foreignKey: 'apiKeyId',
   as: 'apiKey',
 });

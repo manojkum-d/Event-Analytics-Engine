@@ -2,26 +2,72 @@ import moment from 'moment';
 import * as apiKeyRepository from '../repository';
 import CustomError from '../../../shared/utils/customError';
 import { ApiKey } from '../../../shared/models';
-import { CreateApiKeyOptions, IApiKeyService } from '../interfaces';
+import { IApiKeyService } from '../interfaces';
+import DatabaseService from '../../../shared/utils/db/databaseService';
+import { App } from '../../../shared/models';
 
 /**
- * Create a new API key for a user
+ * Get API key for an app
+ */
+export const getAppApiKey = async (appId: string, userId: string): Promise<ApiKey> => {
+  try {
+    if (!appId) {
+      throw new CustomError('App ID is required', 400);
+    }
+
+    const apiKey = await apiKeyRepository.findApiKeyByAppId(appId);
+
+    // Check if the API key belongs to the user
+    if (apiKey && apiKey.userId !== userId) {
+      throw new CustomError('Not authorized to access this API key', 403);
+    }
+
+    if (!apiKey) {
+      throw new CustomError('API key not found for this app', 404);
+    }
+
+    return apiKey;
+  } catch (error) {
+    if (error instanceof CustomError) {
+      throw error;
+    }
+    throw new CustomError('Failed to get API key', 500);
+  }
+};
+
+/**
+ * Create a new API key for an app
  */
 export const createApiKey = async (
   userId: string,
-  appName: string,
-  options: CreateApiKeyOptions = {}
+  appId: string,
+  ipRestrictions?: string[]
 ): Promise<ApiKey> => {
   try {
     if (!userId) {
       throw new CustomError('User ID is required', 400);
     }
 
-    if (!appName) {
-      throw new CustomError('App name is required', 400);
+    if (!appId) {
+      throw new CustomError('App ID is required', 400);
     }
 
-    return await apiKeyRepository.createApiKey(userId, appName, options);
+    try {
+      // Check if an API key already exists for this app
+      const existingKey = await apiKeyRepository.findApiKeyByAppId(appId);
+
+      if (existingKey) {
+        throw new CustomError('An API key already exists for this app', 409);
+      }
+    } catch (error) {
+      // If the error is not a CustomError with status 409, ignore it and continue
+      if (error instanceof CustomError && error.statusCode === 409) {
+        throw error;
+      }
+    }
+
+    // Create new API key
+    return await apiKeyRepository.createApiKey(userId, appId, { ipRestrictions });
   } catch (error) {
     if (error instanceof CustomError) {
       throw error;
@@ -31,48 +77,32 @@ export const createApiKey = async (
 };
 
 /**
- * Get all API keys for a user
+ * Revoke (deactivate) an API key
  */
-export const getUserApiKeys = async (userId: string): Promise<ApiKey[]> => {
+export const revokeApiKey = async (appId: string, userId: string): Promise<void> => {
   try {
+    if (!appId) {
+      throw new CustomError('App ID is required', 400);
+    }
+
     if (!userId) {
       throw new CustomError('User ID is required', 400);
     }
 
-    return await apiKeyRepository.findApiKeysByUserId(userId);
-  } catch (error) {
-    if (error instanceof CustomError) {
-      throw error;
-    }
-    throw new CustomError('Failed to fetch API keys', 500);
-  }
-};
-
-/**
- * Revoke an API key
- */
-export const revokeApiKey = async (keyId: string, userId: string): Promise<ApiKey> => {
-  try {
-    if (!keyId || !userId) {
-      throw new CustomError('API key ID and user ID are required', 400);
-    }
-
-    // First check if the API key exists and belongs to the user
-    const apiKey = await apiKeyRepository.findApiKeyById(keyId);
+    // Find the API key for this app
+    const apiKey = await apiKeyRepository.findApiKeyByAppId(appId);
 
     if (!apiKey) {
       throw new CustomError('API key not found', 404);
     }
 
+    // Check if the user owns this API key
     if (apiKey.userId !== userId) {
-      throw new CustomError('You are not authorized to revoke this API key', 403);
+      throw new CustomError('Not authorized to revoke this API key', 403);
     }
 
-    // Revoke the key
-    await apiKeyRepository.revokeApiKey(keyId, userId);
-
-    // Return the updated API key
-    return await apiKeyRepository.findApiKeyById(keyId);
+    // Revoke the API key
+    await apiKeyRepository.revokeApiKey(apiKey.id);
   } catch (error) {
     if (error instanceof CustomError) {
       throw error;
@@ -86,23 +116,24 @@ export const revokeApiKey = async (keyId: string, userId: string): Promise<ApiKe
  */
 export const regenerateApiKey = async (keyId: string, userId: string): Promise<ApiKey> => {
   try {
-    if (!keyId || !userId) {
-      throw new CustomError('API key ID and user ID are required', 400);
+    if (!keyId) {
+      throw new CustomError('API key ID is required', 400);
     }
 
-    // First check if the API key exists and belongs to the user
+    if (!userId) {
+      throw new CustomError('User ID is required', 400);
+    }
+
+    // Find the API key by ID instead of app ID
     const apiKey = await apiKeyRepository.findApiKeyById(keyId);
 
-    if (!apiKey) {
-      throw new CustomError('API key not found', 404);
-    }
-
+    // Check if the user owns this API key
     if (apiKey.userId !== userId) {
-      throw new CustomError('You are not authorized to regenerate this API key', 403);
+      throw new CustomError('Not authorized to regenerate this API key', 403);
     }
 
-    // Regenerate the key
-    return await apiKeyRepository.regenerateApiKey(keyId, userId);
+    // Regenerate the API key
+    return await apiKeyRepository.regenerateApiKey(apiKey.id);
   } catch (error) {
     if (error instanceof CustomError) {
       throw error;
@@ -129,7 +160,7 @@ export const validateApiKey = async (key: string, ipAddress?: string): Promise<A
     // Check if the key is expired
     if (moment().isAfter(apiKey.expiresAt)) {
       try {
-        await apiKeyRepository.revokeApiKey(apiKey.id, apiKey.userId);
+        await apiKeyRepository.revokeApiKey(apiKey.id);
       } catch (error) {
         console.error('Failed to revoke expired API key:', error);
       }
@@ -162,11 +193,43 @@ export const validateApiKey = async (key: string, ipAddress?: string): Promise<A
   }
 };
 
-// Export all functions as a service object implementing the interface
+/**
+ * Get all API keys for a user
+ */
+export const getUserApiKeys = async (userId: string): Promise<ApiKey[]> => {
+  try {
+    if (!userId) {
+      throw new CustomError('User ID is required', 400);
+    }
+
+    const apiKeys = await DatabaseService.findAll(ApiKey, {
+      where: {
+        userId,
+        isActive: true,
+      } as any,
+      include: [
+        {
+          model: App,
+          as: 'app',
+          attributes: ['name', 'url'],
+        },
+      ],
+    });
+
+    return apiKeys;
+  } catch (error) {
+    if (error instanceof CustomError) {
+      throw error;
+    }
+    throw new CustomError('Failed to fetch API keys', 500);
+  }
+};
+
+// Export all functions as a service object
 export const apiKeyService: IApiKeyService = {
+  getAppApiKey,
   createApiKey,
-  getUserApiKeys,
   revokeApiKey,
-  regenerateApiKey,
   validateApiKey,
+  getUserApiKeys,
 };

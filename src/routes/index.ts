@@ -1,10 +1,12 @@
-import { Router } from 'express';
-import authRoutes from './auth/index';
-import apiKeyRoutes from './apiKey/index';
+import express from 'express';
+import authRoutes from './authRoutes';
+import appRoutes from './appRoutes';
+import apiKeyRoutes from './apikeyRoutes';
 
-const router: Router = Router();
+const router = express.Router();
 
 router.use('/auth', authRoutes);
 router.use('/api-key', apiKeyRoutes);
+router.use('/app', appRoutes);
 
 export default router;

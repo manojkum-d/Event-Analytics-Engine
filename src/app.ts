@@ -10,12 +10,17 @@ import { envConfig } from './shared/config/envConfig';
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 app.use(cookieParser());
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Configure session before passport
 app.use(
   session({
     secret: envConfig.sessionSecret,
@@ -24,18 +29,23 @@ app.use(
     cookie: {
       secure: envConfig.nodeEnv === 'production',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      httpOnly: true,
+      sameSite: 'lax',
     },
   })
 );
 
+// Configure passport
 app.use(passport.initialize());
 app.use(passport.session());
 
 // Setup Swagger documentation
 setupSwagger(app);
 
+// Routes
 app.use('/api/v1', router);
 
+// Error handling
 app.use(exceptionHandler);
 
 export default app;

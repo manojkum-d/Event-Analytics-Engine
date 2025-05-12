@@ -3,17 +3,14 @@ import moment from 'moment';
 import DatabaseService, { QueryOptions } from '../../../shared/utils/db/databaseService';
 import CustomError from '../../../shared/utils/customError';
 import { envConfig } from '../../../shared/config/envConfig';
-import { ApiKey, User } from '../../../shared/models';
+import { ApiKey, App, User } from '../../../shared/models';
 import { isIpInCidr } from '../../../shared/helper/ipHelpers';
 
 /**
  * Find API key by id
  */
-export const findApiKeyById = async (
-  keyId: string,
-  queryOptions?: Parameters<typeof DatabaseService.findById>[2]
-): Promise<ApiKey> => {
-  const apiKey = await DatabaseService.findById(ApiKey, keyId, queryOptions);
+export const findApiKeyById = async (keyId: string): Promise<ApiKey> => {
+  const apiKey = await DatabaseService.findById(ApiKey, keyId);
 
   if (!apiKey) {
     throw new CustomError(`API key with id ${keyId} not found`, 404);
@@ -23,12 +20,37 @@ export const findApiKeyById = async (
 };
 
 /**
- * Find API key by key
+ * Find API key by app ID
  */
-export const findApiKeyByKey = async (
-  key: string,
-  queryOptions?: QueryOptions<ApiKey>
-): Promise<ApiKey | null> => {
+export const findApiKeyByAppId = async (appId: string): Promise<ApiKey | null> => {
+  try {
+    return await DatabaseService.findOne(ApiKey, {
+      where: {
+        appId,
+        isActive: true,
+      } as any,
+      include: [
+        {
+          model: App,
+          as: 'app',
+        },
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'email', 'firstName', 'lastName'],
+        },
+      ],
+    });
+  } catch (error) {
+    console.error('Error finding API key by app ID:', error);
+    return null; // Return null instead of throwing an error
+  }
+};
+
+/**
+ * Find API key by key value
+ */
+export const findApiKeyByKey = async (key: string): Promise<ApiKey | null> => {
   return await DatabaseService.findOne(ApiKey, {
     where: {
       key,
@@ -36,28 +58,15 @@ export const findApiKeyByKey = async (
     } as any,
     include: [
       {
+        model: App,
+        as: 'app',
+      },
+      {
         model: User,
         as: 'user',
         attributes: ['id', 'email', 'firstName', 'lastName'],
       },
     ],
-    ...queryOptions,
-  });
-};
-
-/**
- * Find API keys by user id
- */
-export const findApiKeysByUserId = async (
-  userId: string,
-  queryOptions?: QueryOptions<ApiKey>
-): Promise<ApiKey[]> => {
-  return await DatabaseService.findAll(ApiKey, {
-    where: {
-      userId,
-    } as any,
-    order: [['createdAt', 'DESC']],
-    ...queryOptions,
   });
 };
 
@@ -66,7 +75,7 @@ export const findApiKeysByUserId = async (
  */
 export const createApiKey = async (
   userId: string,
-  appName: string,
+  appId: string,
   options: Partial<ApiKey> = {}
 ): Promise<ApiKey> => {
   // Calculate expiration date
@@ -75,9 +84,10 @@ export const createApiKey = async (
   // Create the API key
   return await DatabaseService.create(ApiKey, {
     userId,
-    appName,
+    appId,
     key: uuidV4(),
     expiresAt,
+    isActive: true,
     ...options,
   } as any);
 };
@@ -85,11 +95,10 @@ export const createApiKey = async (
 /**
  * Revoke API key
  */
-export const revokeApiKey = async (keyId: string, userId: string): Promise<void> => {
+export const revokeApiKey = async (keyId: string): Promise<void> => {
   const result = await DatabaseService.update(ApiKey, { isActive: false } as any, {
     where: {
       id: keyId,
-      userId,
     } as any,
   });
 
@@ -101,7 +110,7 @@ export const revokeApiKey = async (keyId: string, userId: string): Promise<void>
 /**
  * Regenerate API key
  */
-export const regenerateApiKey = async (keyId: string, userId: string): Promise<ApiKey> => {
+export const regenerateApiKey = async (keyId: string): Promise<ApiKey> => {
   // Generate a new key and update expiration
   const result = await DatabaseService.update(
     ApiKey,
@@ -112,7 +121,6 @@ export const regenerateApiKey = async (keyId: string, userId: string): Promise<A
     {
       where: {
         id: keyId,
-        userId,
       } as any,
     }
   );

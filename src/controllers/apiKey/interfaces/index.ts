@@ -9,15 +9,16 @@ export interface CreateApiKeyOptions {
 
 // Interface for API key service
 export interface IApiKeyService {
-  createApiKey(userId: string, appName: string, options?: CreateApiKeyOptions): Promise<ApiKey>;
-  getUserApiKeys(userId: string): Promise<ApiKey[]>;
-  revokeApiKey(keyId: string, userId: string): Promise<ApiKey>;
-  regenerateApiKey(keyId: string, userId: string): Promise<ApiKey>;
+  getAppApiKey(appId: string, userId: string): Promise<ApiKey>;
+  createApiKey(userId: string, appId: string, ipRestrictions?: string[]): Promise<ApiKey>;
+  revokeApiKey(appId: string, userId: string): Promise<void>;
   validateApiKey(key: string, ipAddress?: string): Promise<ApiKey | null>;
+  getUserApiKeys(userId: string): Promise<ApiKey[]>;
 }
 
 // Interface for request body
 export interface CreateApiKeyRequest {
+  appId: string;
   appName: string;
   description?: string;
   appUrl?: string;

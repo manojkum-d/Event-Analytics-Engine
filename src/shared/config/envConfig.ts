@@ -18,6 +18,10 @@ const _GOOGLE_CLIENT_ID = getEnvVar('GOOGLE_CLIENT_ID');
 const _GOOGLE_CLIENT_SECRET = getEnvVar('GOOGLE_CLIENT_SECRET');
 const _GOOGLE_CALLBACK_URL = getEnvVar('GOOGLE_CALLBACK_URL');
 const _SESSION_SECRET = getEnvVar('SESSION_SECRET');
+const _JWT_SECRET = getEnvVar('JWT_SECRET');
+const _JWT_REFRESH_SECRET = getEnvVar('JWT_REFRESH_SECRET');
+const _JWT_EXPIRES_IN = getEnvVar('JWT_EXPIRES_IN');
+const _JWT_REFRESH_EXPIRES_IN = getEnvVar('JWT_REFRESH_EXPIRES_IN');
 
 export const envConfig = {
   get nodeEnv() {
@@ -58,5 +62,17 @@ export const envConfig = {
   },
   get sessionSecret() {
     return _SESSION_SECRET;
+  },
+  get jwtSecret() {
+    return _JWT_SECRET;
+  },
+  get jwtRefreshSecret() {
+    return _JWT_REFRESH_SECRET;
+  },
+  get jwtExpiresIn() {
+    return _JWT_EXPIRES_IN;
+  },
+  get jwtRefreshExpiresIn() {
+    return _JWT_REFRESH_EXPIRES_IN;
   },
 };

@@ -5,14 +5,10 @@ import {
   authSuccess,
   getCurrentUser,
   logout,
-} from '../../controllers/authController';
-import { isAuthenticated } from '../../middlewares/authMiddleware';
-import {
-  createApiKey,
-  getApiKeys,
-  revokeApiKey,
-  regenerateApiKey,
-} from '../../controllers/apiKeyController';
+} from '../controllers/auth';
+import { isAuthenticated } from '../middlewares/authMiddleware';
+import { registerApp } from '../controllers/app';
+import passport from 'passport';
 
 const router = express.Router();
 
@@ -44,7 +40,12 @@ const router = express.Router();
  *                       type: string
  *                       example: https://accounts.google.com/o/oauth2/v2/auth?response_type=code&...
  */
-router.get('/google', googleAuth);
+router.get(
+  '/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+  })
+);
 
 /**
  * @swagger
@@ -64,7 +65,14 @@ router.get('/google', googleAuth);
  *       302:
  *         description: Redirects to success page after successful authentication
  */
-router.get('/google/callback', googleCallback);
+router.get(
+  '/google/callback',
+  passport.authenticate('google', {
+    failureRedirect: '/login',
+    session: true,
+    successRedirect: '/api/v1/auth/success',
+  })
+);
 
 /**
  * @swagger
@@ -251,6 +259,6 @@ router.get('/logout', logout);
  *       401:
  *         description: Not authenticated
  */
-router.post('/register', isAuthenticated, createApiKey);
+router.post('/register', isAuthenticated, registerApp);
 
 export default router;

@@ -1,53 +1,10 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import * as apiKeyService from './services';
 import { asyncHandler } from '../../shared/utils/asyncHandler';
 import { httpResponse } from '../../shared/utils/httpResponse';
 import CustomError from '../../shared/utils/customError';
 import { ApiKey } from '../../shared/models';
 import { ApiKeyResponse, CreateApiKeyRequest } from './interfaces';
-
-/**
- * Create a new API key
- */
-export const createApiKey = asyncHandler(async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      throw new CustomError('Not authenticated', 401);
-    }
-
-    const { appName, description, appUrl, ipRestrictions } = req.body as CreateApiKeyRequest;
-
-    const apiKey = await apiKeyService.createApiKey(userId, appName, {
-      description,
-      appUrl,
-      ipRestrictions,
-    });
-
-    const response: ApiKeyResponse = {
-      id: apiKey.id,
-      key: apiKey.key,
-      appName: apiKey.appName,
-      expiresAt: apiKey.expiresAt,
-      description: apiKey.description || undefined,
-      appUrl: apiKey.appUrl || undefined,
-      ipRestrictions: apiKey.ipRestrictions || undefined,
-    };
-
-    res.json(
-      httpResponse({
-        status: 201,
-        message: 'API key created successfully',
-        data: response,
-      })
-    );
-  } catch (error) {
-    if (error instanceof CustomError) {
-      throw error;
-    }
-    throw new CustomError('Failed to create API key', 500);
-  }
-}, 'createApiKey');
 
 /**
  * Get all API keys for current user
@@ -63,13 +20,17 @@ export const getApiKeys = asyncHandler(async (req: Request, res: Response) => {
     const response = apiKeys.map((apiKey: ApiKey) => ({
       id: apiKey.id,
       key: apiKey.key,
-      appName: apiKey.appName,
+      appId: apiKey.appId,
       expiresAt: apiKey.expiresAt,
-      description: apiKey.description,
-      appUrl: apiKey.appUrl,
       ipRestrictions: apiKey.ipRestrictions,
       isActive: apiKey.isActive,
       lastUsed: apiKey.lastUsed,
+      appDetails: apiKey.app
+        ? {
+            name: apiKey.app.name,
+            url: apiKey.app.url,
+          }
+        : null,
     }));
 
     res.json(
@@ -102,26 +63,13 @@ export const revokeApiKey = asyncHandler(async (req: Request, res: Response) => 
       throw new CustomError('API key ID is required', 400);
     }
 
-    const apiKey = await apiKeyService.revokeApiKey(id, req.user.id);
-
-    const response: ApiKeyResponse = {
-      id: apiKey.id,
-      key: apiKey.key,
-      appName: apiKey.appName,
-      expiresAt: apiKey.expiresAt,
-      description: apiKey.description || undefined,
-      appUrl: apiKey.appUrl || undefined,
-      ipRestrictions: apiKey.ipRestrictions || undefined,
-    };
+    await apiKeyService.revokeApiKey(id, req.user.id);
 
     res.json(
       httpResponse({
         status: 200,
         message: 'API key revoked successfully',
-        data: {
-          ...response,
-          revokedAt: new Date(),
-        },
+        data: null,
       })
     );
   } catch (error) {
@@ -149,21 +97,17 @@ export const regenerateApiKey = asyncHandler(async (req: Request, res: Response)
 
     const apiKey = await apiKeyService.regenerateApiKey(id, req.user.id);
 
-    const response: ApiKeyResponse = {
-      id: apiKey.id,
-      key: apiKey.key,
-      appName: apiKey.appName,
-      expiresAt: apiKey.expiresAt,
-      description: apiKey.description || undefined,
-      appUrl: apiKey.appUrl || undefined,
-      ipRestrictions: apiKey.ipRestrictions || undefined,
-    };
-
     res.json(
       httpResponse({
         status: 200,
         message: 'API key regenerated successfully',
-        data: response,
+        data: {
+          id: apiKey.id,
+          key: apiKey.key,
+          appId: apiKey.appId,
+          expiresAt: apiKey.expiresAt,
+          ipRestrictions: apiKey.ipRestrictions,
+        },
       })
     );
   } catch (error) {
@@ -175,9 +119,45 @@ export const regenerateApiKey = asyncHandler(async (req: Request, res: Response)
 }, 'regenerateApiKey');
 
 /**
- * Validate API key
+ * Validate API key middleware
+ * Used to validate incoming API keys for analytics collection
  */
-export const validateApiKeyMiddleware = asyncHandler(async (req: Request, res: Response) => {
+export const validateApiKeyMiddleware = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const apiKey = req.headers['x-api-key'] as string;
+      const ipAddress = req.ip;
+
+      if (!apiKey) {
+        throw new CustomError('API key is required', 401);
+      }
+
+      const validApiKey = await apiKeyService.validateApiKey(apiKey, ipAddress);
+
+      if (!validApiKey) {
+        throw new CustomError('Invalid or expired API key', 401);
+      }
+
+      // Attach API key to request for downstream use
+      req.apiKey = validApiKey;
+
+      // Continue to the next middleware/handler
+      next();
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new CustomError('Failed to validate API key', 500);
+    }
+  },
+  'validateApiKey'
+);
+
+/**
+ * Verify API key is valid
+ * Standalone endpoint for clients to verify their API key
+ */
+export const verifyApiKey = asyncHandler(async (req: Request, res: Response) => {
   try {
     const apiKey = req.headers['x-api-key'] as string;
     const ipAddress = req.ip;
@@ -192,17 +172,13 @@ export const validateApiKeyMiddleware = asyncHandler(async (req: Request, res: R
       throw new CustomError('Invalid or expired API key', 401);
     }
 
-    // Attach API key to request for downstream use
-    req.apiKey = validApiKey;
-    res.locals.apiKey = validApiKey;
-
+    // Return verification success
     res.json(
       httpResponse({
         status: 200,
         message: 'API key is valid',
         data: {
-          id: validApiKey.id,
-          appName: validApiKey.appName,
+          appId: validApiKey.appId,
           expiresAt: validApiKey.expiresAt,
         },
       })
@@ -211,6 +187,6 @@ export const validateApiKeyMiddleware = asyncHandler(async (req: Request, res: R
     if (error instanceof CustomError) {
       throw error;
     }
-    throw new CustomError('Failed to validate API key', 500);
+    throw new CustomError('Failed to verify API key', 500);
   }
-}, 'validateApiKey');
+}, 'verifyApiKey');
