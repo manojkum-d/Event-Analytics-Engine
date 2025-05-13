@@ -23,7 +23,6 @@ class ApiKey extends Model<InferAttributes<ApiKey>, InferCreationAttributes<ApiK
   declare updatedAt: CreationOptional<Date>;
   declare deletedAt: CreationOptional<Date | null>;
 
-  // Add association
   declare app?: App;
 
   declare static associations: {

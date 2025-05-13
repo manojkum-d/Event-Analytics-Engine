@@ -8,6 +8,7 @@ import {
 import { validateApiKey } from '../middlewares/authMiddleware';
 import { isAuthenticated } from '../middlewares/authMiddleware';
 import * as analyticsController from '../controllers/analytics';
+import { rateLimiter } from '../middlewares/rateLimitter';
 
 const router = express.Router();
 
@@ -172,7 +173,13 @@ const router = express.Router();
  *                   type: string
  *                   example: An error occurred while recording the event
  */
-router.post('/collect', validateApiKey, validateAnalyticsEvent, collectEvent);
+router.post(
+  '/collect',
+  validateApiKey,
+  rateLimiter('collection'),
+  validateAnalyticsEvent,
+  collectEvent
+);
 
 /**
  * @swagger
@@ -253,7 +260,8 @@ router.post('/collect', validateApiKey, validateAnalyticsEvent, collectEvent);
  */
 router.get(
   '/event-summary',
-  isAuthenticated,
+  validateApiKey,
+  rateLimiter('analytics'),
   validateEventSummaryRequest,
   analyticsController.getEventSummary
 );

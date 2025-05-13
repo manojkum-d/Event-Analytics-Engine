@@ -1,13 +1,6 @@
 import express from 'express';
-import {
-  googleAuth,
-  googleCallback,
-  authSuccess,
-  getCurrentUser,
-  logout,
-} from '../controllers/auth';
+import { authSuccess, getCurrentUser, logout } from '../controllers/auth';
 import { isAuthenticated } from '../middlewares/authMiddleware';
-// import { registerApp } from '../controllers/app';
 import passport from 'passport';
 import { getApiKeys, getAppApiKey, registerApp, revokeApiKey } from '../controllers/apiKey';
 
