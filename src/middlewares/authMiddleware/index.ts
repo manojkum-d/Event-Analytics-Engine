@@ -3,7 +3,7 @@ import passport from 'passport';
 import CustomError from '../../shared/utils/customError';
 import { apiKeyService } from '../../controllers/apiKey/services';
 import { verifyToken } from '../../shared/utils/jwt';
-import * as userRepository from '../../repositories/users';
+import * as userRepository from '../../controllers/auth/repository';
 
 /**
  * Middleware to check if user is authenticated via JWT

@@ -1,7 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { envConfig } from './envConfig';
-import * as userRepository from '../../repositories/users';
+import * as userRepository from '../../controllers/auth/repository';
 import User from '../models/User';
 
 // Configure Passport Google OAuth strategy

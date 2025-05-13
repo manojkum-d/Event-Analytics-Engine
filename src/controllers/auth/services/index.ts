@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import * as userRepository from '../../../repositories/users';
+import * as userRepository from '../repository';
 import CustomError from '../../../shared/utils/customError';
 import { envConfig } from '../../../shared/config/envConfig';
 
@@ -59,7 +59,7 @@ export const getCurrentUser = async (userId: string): Promise<UserResponse> => {
 export const logoutUser = async (req: Request): Promise<void> => {
   return new Promise((resolve, reject) => {
     try {
-      req.logout((err) => {
+      req.logout((err: any) => {
         if (err) {
           reject(new CustomError('Error during logout', 500, err));
         }
