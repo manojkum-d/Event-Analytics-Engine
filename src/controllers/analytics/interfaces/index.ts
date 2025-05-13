@@ -56,3 +56,37 @@ export interface EventSummaryResponse {
   startDate?: string;
   endDate?: string;
 }
+
+export interface UserStatsRequest {
+  userId: string;
+}
+
+export interface DeviceDetails {
+  browser: string;
+  os: string;
+}
+
+export interface UserStatsResponse {
+  userId: string;
+  totalEvents: number;
+  deviceDetails: DeviceDetails;
+  ipAddress: string;
+  lastSeen?: Date;
+  mostFrequentEvents?: Array<{
+    event: string;
+    count: number;
+  }>;
+}
+
+export interface EventMetadata {
+  browser?: string;
+  os?: string;
+  [key: string]: any;
+}
+
+export interface EventCountResult {
+  event: string;
+  count: string | number;
+  browser?: string;
+  os?: string;
+}

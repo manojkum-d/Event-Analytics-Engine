@@ -3,6 +3,7 @@ import { collectEvent } from '../controllers/analytics';
 import {
   validateAnalyticsEvent,
   validateEventSummaryRequest,
+  validateUserStatsRequest,
 } from '../shared/validators/analyticsValidator';
 import { validateApiKey } from '../middlewares/authMiddleware';
 import { isAuthenticated } from '../middlewares/authMiddleware';
@@ -255,6 +256,41 @@ router.get(
   isAuthenticated,
   validateEventSummaryRequest,
   analyticsController.getEventSummary
+);
+
+/**
+ * @swagger
+ * /api/analytics/user-stats:
+ *   get:
+ *     summary: Get user statistics
+ *     description: Retrieves statistics for a specific user
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: userId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The user ID to get statistics for
+ *     responses:
+ *       200:
+ *         description: User statistics retrieved successfully
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.get(
+  '/user-stats',
+  isAuthenticated,
+  validateUserStatsRequest,
+  analyticsController.getUserStats
 );
 
 export default router;

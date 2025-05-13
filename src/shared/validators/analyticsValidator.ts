@@ -78,3 +78,11 @@ export const validateEventSummaryRequest = [
   query('endDate').optional().isDate().withMessage('Invalid end date format'),
   query('app_id').optional().isUUID().withMessage('Invalid app ID format'),
 ];
+
+export const validateUserStatsRequest = [
+  query('userId')
+    .notEmpty()
+    .withMessage('User ID is required')
+    .isString()
+    .withMessage('User ID must be a string'),
+];

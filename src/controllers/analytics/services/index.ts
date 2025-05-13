@@ -1,5 +1,10 @@
-import { createEvent, getEventSummary } from '../repositories';
-import { AnalyticsEvent, EventSummaryRequest, EventSummaryResponse } from '../interfaces';
+import { createEvent, getEventSummary, getUserStats } from '../repositories';
+import {
+  AnalyticsEvent,
+  EventSummaryRequest,
+  EventSummaryResponse,
+  UserStatsResponse,
+} from '../interfaces';
 import Event from '../../../shared/models/Event';
 import ApiKey from '../../../shared/models/ApiKey';
 import CustomError from '../../../shared/utils/customError';
@@ -157,5 +162,53 @@ export const updateEventCache = async (
     await invalidateEventCache(userId, eventType);
   } catch (error) {
     console.error('Error updating event cache:', error);
+  }
+};
+
+/**
+ * Get user statistics
+ */
+export const getUserStatistics = async (
+  userId: string,
+  trackingUserId: string
+): Promise<UserStatsResponse> => {
+  try {
+    // Get all API keys for this user
+    const apiKeys = await ApiKey.findAll({
+      where: {
+        userId,
+      },
+      attributes: ['id'],
+      raw: true,
+    });
+
+    if (apiKeys.length === 0) {
+      throw new CustomError('No API keys found for user', 404);
+    }
+
+    const apiKeyIds = apiKeys.map((key) => key.id);
+
+    // Generate cache key
+    const cacheKey = `user:stats:${trackingUserId}`;
+
+    // Try to get from cache
+    const cachedStats = await getFromCache<UserStatsResponse>(cacheKey);
+    if (cachedStats) {
+      return cachedStats;
+    }
+
+    // Get fresh stats from database
+    const stats = await getUserStats(trackingUserId, apiKeyIds);
+
+    // Cache the results
+    await storeInCache<UserStatsResponse>(cacheKey, stats, DEFAULT_CACHE_TTL);
+
+    return stats;
+  } catch (error) {
+    console.error('Error getting user statistics:', error);
+    if (error instanceof CustomError) {
+      throw error;
+    }
+    throw new CustomError('Failed to retrieve user statistics', 500);
   }
 };

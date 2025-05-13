@@ -6,6 +6,11 @@ import {
   EventSummaryRequest,
   EventSummaryResponse,
   DeviceData,
+  UserStatsRequest,
+  DeviceDetails,
+  UserStatsResponse,
+  EventCountResult,
+  EventMetadata,
 } from '../interfaces';
 import { v4 as uuidv4 } from 'uuid';
 import moment from 'moment';
@@ -14,6 +19,13 @@ import { Op } from 'sequelize';
 import { trackUniqueVisitor, incrementEventCounter } from '../../../shared/helper/cacheHelper';
 
 const now = moment().toDate();
+
+// Define the interface for raw query results
+interface RawEventCount {
+  event: string;
+  count: string; // SQL count returns this as string when using raw: true
+}
+
 /**
  * Create a new event record and update Redis counters
  */
@@ -202,5 +214,72 @@ export const getEventSummary = async (
     count: totalCount,
     uniqueUsers,
     deviceData: deviceCounts,
+  };
+};
+
+/**
+ * Get user statistics from events
+ */
+export const getUserStats = async (
+  trackingUserId: string,
+  apiKeyIds: string[]
+): Promise<UserStatsResponse> => {
+  // Get total events count
+  const totalEvents = await Event.count({
+    where: {
+      trackingUserId,
+      apiKeyId: {
+        [Op.in]: apiKeyIds,
+      },
+    },
+  });
+
+  // Get most recent event for device details and IP
+  const latestEvent = await Event.findOne({
+    where: {
+      trackingUserId,
+      apiKeyId: {
+        [Op.in]: apiKeyIds,
+      },
+    },
+    order: [['timestamp', 'DESC']],
+    raw: true,
+    attributes: ['ip_address', 'timestamp', 'metadata'],
+  });
+
+  // Get most frequent events with proper typing
+  const eventCounts = (await Event.findAll({
+    where: {
+      trackingUserId,
+      apiKeyId: {
+        [Op.in]: apiKeyIds,
+      },
+    },
+    attributes: ['event', [Sequelize.fn('COUNT', '*'), 'count']],
+    group: ['event'],
+    order: [[Sequelize.fn('COUNT', '*'), 'DESC']],
+    limit: 5,
+    raw: true,
+  })) as unknown as RawEventCount[]; // Cast the raw query result
+
+  // Safely extract metadata and cast to our interface
+  const metadata = latestEvent?.metadata as EventMetadata | undefined;
+
+  // Extract device details from metadata with type safety
+  const deviceDetails: DeviceDetails = {
+    browser: metadata?.browser || 'Unknown',
+    os: metadata?.os || 'Unknown',
+  };
+
+  return {
+    userId: trackingUserId,
+    totalEvents: totalEvents as unknown as number,
+    deviceDetails,
+    ipAddress: latestEvent?.ipAddress || 'Unknown',
+    lastSeen: latestEvent?.timestamp,
+    mostFrequentEvents: eventCounts.map((ec) => ({
+      event: ec.event,
+      count: parseInt(ec.count, 10), // Always parse as integer with radix
+    })),
   };
 };

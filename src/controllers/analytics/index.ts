@@ -6,6 +6,7 @@ import { httpResponse } from '../../shared/utils/httpResponse';
 import CustomError from '../../shared/utils/customError';
 import { getEventAnalyticsSummary } from './services';
 import { EventSummaryRequest } from './interfaces';
+import { getUserStatistics } from './services';
 
 /**
  * Collect analytics event
@@ -75,3 +76,28 @@ export const getEventSummary = asyncHandler(async (req: Request, res: Response):
     })
   );
 }, 'getEventSummaryHandler');
+
+/**
+ * Get user statistics
+ */
+export const getUserStats = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new CustomError('Unauthorized', 401);
+  }
+
+  const trackingUserId = req.query.userId as string;
+  if (!trackingUserId) {
+    throw new CustomError('User ID is required', 400);
+  }
+
+  const stats = await getUserStatistics(userId, trackingUserId);
+
+  res.status(200).json(
+    httpResponse({
+      status: 200,
+      message: 'User statistics retrieved successfully',
+      data: stats,
+    })
+  );
+}, 'getUserStatsHandler');
