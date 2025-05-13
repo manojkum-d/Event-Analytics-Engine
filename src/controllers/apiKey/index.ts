@@ -4,7 +4,7 @@ import { asyncHandler } from '../../shared/utils/asyncHandler';
 import { httpResponse } from '../../shared/utils/httpResponse';
 import CustomError from '../../shared/utils/customError';
 import { ApiKey } from '../../shared/models';
-import { ApiKeyResponse, CreateApiKeyRequest } from './interfaces';
+import DatabaseService from '../../shared/utils/db/databaseService';
 
 /**
  * Get all API keys for current user
@@ -49,7 +49,43 @@ export const getApiKeys = asyncHandler(async (req: Request, res: Response) => {
 }, 'getApiKeys');
 
 /**
- * Revoke an API key
+ * Get API key for an app
+ */
+export const getAppApiKey = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      throw new CustomError('Not authenticated', 401);
+    }
+
+    const { appId } = req.params;
+
+    const apiKey = await apiKeyService.getAppApiKey(appId, req.user.id);
+
+    res.json(
+      httpResponse({
+        status: 200,
+        message: 'API key retrieved successfully',
+        data: {
+          apiKey: {
+            id: apiKey.id,
+            key: apiKey.key,
+            expiresAt: apiKey.expiresAt,
+            ipRestrictions: apiKey.ipRestrictions,
+            lastUsed: apiKey.lastUsed,
+          },
+        },
+      })
+    );
+  } catch (error) {
+    if (error instanceof CustomError) {
+      throw error;
+    }
+    throw new CustomError('Failed to get API key', 500);
+  }
+}, 'getAppApiKey');
+
+/**
+ * Revoke API key for an app
  */
 export const revokeApiKey = asyncHandler(async (req: Request, res: Response) => {
   try {
@@ -57,13 +93,31 @@ export const revokeApiKey = asyncHandler(async (req: Request, res: Response) => 
       throw new CustomError('Not authenticated', 401);
     }
 
-    const { id } = req.params;
+    const { appId } = req.params;
+    console.log(`Attempting to revoke API key for app ${appId}`);
 
-    if (!id) {
-      throw new CustomError('API key ID is required', 400);
+    // First find the API key directly
+    const apiKey = await DatabaseService.findOne(ApiKey, {
+      where: {
+        appId,
+      } as any,
+    });
+
+    if (!apiKey) {
+      throw new CustomError(`No API key found for app ${appId}`, 404);
     }
 
-    await apiKeyService.revokeApiKey(id, req.user.id);
+    // Check ownership
+    if (apiKey.userId !== req.user.id) {
+      throw new CustomError('Not authorized to revoke this API key', 403);
+    }
+
+    // Directly revoke using the API key ID
+    await DatabaseService.update(ApiKey, { isActive: false } as any, {
+      where: {
+        id: apiKey.id,
+      } as any,
+    });
 
     res.json(
       httpResponse({
@@ -79,3 +133,57 @@ export const revokeApiKey = asyncHandler(async (req: Request, res: Response) => 
     throw new CustomError('Failed to revoke API key', 500);
   }
 }, 'revokeApiKey');
+
+/**
+ * Register a new app with API key
+ * @route POST /api/v1/auth/register
+ * @access Private - Requires authentication
+ */
+export const registerApp = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      throw new CustomError('Not authenticated', 401);
+    }
+
+    const { appName, description, appUrl, ipRestrictions } = req.body;
+
+    if (!appName) {
+      throw new CustomError('App name is required', 400);
+    }
+
+    // First create the app
+    const app = await apiKeyService.createApp(req.user.id, {
+      name: appName,
+      description,
+      url: appUrl,
+    });
+
+    // Then create an API key for this app
+    const apiKey = await apiKeyService.createApiKey(req.user.id, app.id, ipRestrictions);
+
+    res.json(
+      httpResponse({
+        status: 201,
+        message: 'App registered successfully',
+        data: {
+          app: {
+            id: app.id,
+            name: app.name,
+            description: app.description,
+            url: app.url,
+          },
+          apiKey: {
+            id: apiKey.id,
+            key: apiKey.key,
+            expiresAt: apiKey.expiresAt,
+          },
+        },
+      })
+    );
+  } catch (error) {
+    if (error instanceof CustomError) {
+      throw error;
+    }
+    throw new CustomError('Failed to register app', 500);
+  }
+}, 'registerApp');

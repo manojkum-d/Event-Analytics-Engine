@@ -27,3 +27,9 @@ export interface ApiKeyResponse {
   appUrl?: string;
   ipRestrictions?: string[];
 }
+
+export interface CreateAppOptions {
+  name: string;
+  description?: string;
+  url?: string;
+}

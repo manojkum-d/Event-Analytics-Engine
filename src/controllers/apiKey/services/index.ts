@@ -2,9 +2,35 @@ import moment from 'moment';
 import * as apiKeyRepository from '../repository';
 import CustomError from '../../../shared/utils/customError';
 import { ApiKey } from '../../../shared/models';
-import { IApiKeyService } from '../interfaces';
+import { CreateAppOptions, IApiKeyService } from '../interfaces';
 import DatabaseService from '../../../shared/utils/db/databaseService';
 import { App } from '../../../shared/models';
+
+/**
+ * Create a new app
+ */
+export const createApp = async (userId: string, options: CreateAppOptions): Promise<App> => {
+  try {
+    if (!userId) {
+      throw new CustomError('User ID is required', 400);
+    }
+
+    if (!options.name) {
+      throw new CustomError('App name is required', 400);
+    }
+
+    return await apiKeyRepository.createApp(userId, {
+      name: options.name,
+      description: options.description,
+      url: options.url,
+    });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      throw error;
+    }
+    throw new CustomError('Failed to create app', 500);
+  }
+};
 
 /**
  * Get API key for an app

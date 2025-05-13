@@ -7,9 +7,9 @@ import {
   logout,
 } from '../controllers/auth';
 import { isAuthenticated } from '../middlewares/authMiddleware';
-import { getAppApiKey, registerApp, revokeAppApiKey } from '../controllers/app';
+// import { registerApp } from '../controllers/app';
 import passport from 'passport';
-import { getApiKeys } from '../controllers/apiKey';
+import { getApiKeys, getAppApiKey, registerApp, revokeApiKey } from '../controllers/apiKey';
 
 const router = express.Router();
 
@@ -353,6 +353,6 @@ router.get('/:appId/api-key', isAuthenticated, getAppApiKey);
  *       401:
  *         description: Unauthorized
  */
-router.post('/:appId/revoke-key', isAuthenticated, revokeAppApiKey);
+router.post('/:appId/revoke-key', isAuthenticated, revokeApiKey);
 
 export default router;

@@ -106,6 +106,18 @@ export const revokeApiKey = async (keyId: string): Promise<void> => {
     throw new CustomError('API key not found or already revoked', 404);
   }
 };
+/**
+ * Create app
+ */
+export const createApp = async (userId: string, appData: Partial<App>): Promise<App> => {
+  return await DatabaseService.create(App, {
+    userId,
+    name: appData.name,
+    description: appData.description,
+    url: appData.url,
+    isActive: true,
+  } as any);
+};
 
 // Export the utility function for IP checking
 export { isIpInCidr };

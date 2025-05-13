@@ -54,26 +54,6 @@ export const updateUser = async (userId: string, userData: Partial<User>): Promi
   return result;
 };
 
-/**
- * Find or create user (for OAuth)
- */
-export const findOrCreateUser = async (
-  email: string,
-  userData: Partial<User>
-): Promise<[User, boolean]> => {
-  const existingUser = await findUserByEmail(email);
-
-  if (existingUser) {
-    // Update existing user with new data
-    await updateUser(existingUser.id, userData);
-    return [existingUser, false];
-  }
-
-  // Create new user
-  const newUser = await createUser(userData);
-  return [newUser, true];
-};
-
 // Find user by google id
 export const findUserByGoogleId = async (
   googleId: string,
