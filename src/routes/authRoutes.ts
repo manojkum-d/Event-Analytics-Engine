@@ -65,7 +65,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /auth/google:
+ * /api/v1/auth/google:
  *   get:
  *     summary: Initiate Google OAuth authentication
  *     tags: [Authentication]
@@ -83,7 +83,7 @@ router.get(
 
 /**
  * @swagger
- * /auth/google/callback:
+ * /api/v1/auth/google/callback:
  *   get:
  *     summary: Google OAuth callback endpoint
  *     tags: [Authentication]
@@ -110,7 +110,7 @@ router.get(
 
 /**
  * @swagger
- * /auth/success:
+ * /api/v1/auth/success:
  *   get:
  *     summary: Authentication success endpoint
  *     tags: [Authentication]
@@ -139,7 +139,7 @@ router.get('/success', authSuccess);
 
 /**
  * @swagger
- * /auth/me:
+ * /api/v1/auth/me:
  *   get:
  *     summary: Get current user info
  *     tags: [Authentication]
@@ -157,6 +157,9 @@ router.get('/success', authSuccess);
  *                 status:
  *                   type: integer
  *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: User details retrieved successfully
  *                 data:
  *                   type: object
  *                   properties:
@@ -169,7 +172,7 @@ router.get('/me', isAuthenticated, getCurrentUser);
 
 /**
  * @swagger
- * /auth/logout:
+ * /api/v1/auth/logout:
  *   get:
  *     summary: Logout user
  *     tags: [Authentication]
@@ -193,7 +196,7 @@ router.get('/logout', logout);
 
 /**
  * @swagger
- * /auth/register:
+ * /api/v1/auth/register:
  *   post:
  *     summary: Register a new application and generate API key
  *     tags: [API Key Management]
@@ -237,9 +240,24 @@ router.get('/logout', logout);
  *                   example: 201
  *                 message:
  *                   type: string
- *                   example: API key generated successfully
+ *                   example: App registered successfully
  *                 data:
- *                   $ref: '#/components/schemas/ApiKey'
+ *                   type: object
+ *                   properties:
+ *                     app:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           format: uuid
+ *                         name:
+ *                           type: string
+ *                         description:
+ *                           type: string
+ *                         url:
+ *                           type: string
+ *                     apiKey:
+ *                       $ref: '#/components/schemas/ApiKey'
  *       400:
  *         description: Invalid request parameters
  *       401:
@@ -249,7 +267,7 @@ router.post('/register', isAuthenticated, registerApp);
 
 /**
  * @swagger
- * /auth/api-keys:
+ * /api/v1/auth/api-keys:
  *   get:
  *     summary: Get all API keys for current user
  *     tags: [API Key Management]
@@ -266,10 +284,26 @@ router.post('/register', isAuthenticated, registerApp);
  *                 status:
  *                   type: integer
  *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: API keys retrieved successfully
  *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/ApiKey'
+ *                   type: object
+ *                   properties:
+ *                     apiKeys:
+ *                       type: array
+ *                       items:
+ *                         allOf:
+ *                           - $ref: '#/components/schemas/ApiKey'
+ *                           - type: object
+ *                             properties:
+ *                               appDetails:
+ *                                 type: object
+ *                                 properties:
+ *                                   name:
+ *                                     type: string
+ *                                   url:
+ *                                     type: string
  *       401:
  *         description: Unauthorized
  */
@@ -277,7 +311,7 @@ router.use('/api-keys', isAuthenticated, getApiKeys);
 
 /**
  * @swagger
- * /auth/{appId}/api-key:
+ * /api/v1/auth/{appId}/api-key:
  *   get:
  *     summary: Get API key for specific application
  *     tags: [API Key Management]
@@ -302,8 +336,14 @@ router.use('/api-keys', isAuthenticated, getApiKeys);
  *                 status:
  *                   type: integer
  *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: API key retrieved successfully
  *                 data:
- *                   $ref: '#/components/schemas/ApiKey'
+ *                   type: object
+ *                   properties:
+ *                     apiKey:
+ *                       $ref: '#/components/schemas/ApiKey'
  *       404:
  *         description: API key not found
  *       401:
@@ -313,7 +353,7 @@ router.get('/:appId/api-key', isAuthenticated, getAppApiKey);
 
 /**
  * @swagger
- * /auth/{appId}/revoke-key:
+ * /api/v1/auth/{appId}/revoke-key:
  *   post:
  *     summary: Revoke API key for specific application
  *     tags: [API Key Management]
@@ -341,10 +381,14 @@ router.get('/:appId/api-key', isAuthenticated, getAppApiKey);
  *                 message:
  *                   type: string
  *                   example: API key revoked successfully
+ *                 data:
+ *                   type: null
  *       404:
  *         description: API key not found
  *       401:
  *         description: Unauthorized
+ *       403:
+ *         description: Not authorized to revoke this API key
  */
 router.post('/:appId/revoke-key', isAuthenticated, revokeApiKey);
 
