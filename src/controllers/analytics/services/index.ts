@@ -31,21 +31,6 @@ export const recordEvent = async (apiKeyId: string, eventData: AnalyticsEvent): 
 };
 
 /**
- * Check if IP address is allowed for the API key
- */
-export const isIpAllowed = (apiKey: ApiKey, requestIp: string): boolean => {
-  if (
-    !apiKey.ipRestrictions ||
-    !Array.isArray(apiKey.ipRestrictions) ||
-    apiKey.ipRestrictions.length === 0
-  ) {
-    return true;
-  }
-
-  return apiKey.ipRestrictions.includes(requestIp);
-};
-
-/**
  * Validates if the app belongs to the user
  */
 const validateAppOwnership = async (userId: string, appId: string): Promise<void> => {
@@ -130,38 +115,6 @@ export const getEventAnalyticsSummary = async (
       throw error;
     }
     throw new CustomError('Failed to retrieve event analytics summary', 500);
-  }
-};
-
-/**
- * Invalidate cache for specific criteria
- */
-export const invalidateEventCache = async (
-  userId: string,
-  event?: string,
-  appId?: string
-): Promise<void> => {
-  // Generate pattern for keys to delete
-  const pattern = `analytics:event:${userId}:${event || '*'}:*:*:${appId || '*'}`;
-
-  // Delete matching keys
-  await deleteByPattern(pattern);
-};
-
-/**
- * Update cache entries after new events are recorded
- */
-export const updateEventCache = async (
-  userId: string,
-  eventType: string,
-  appId: string
-): Promise<void> => {
-  try {
-    // Invalidate specific caches when new events are recorded
-    await invalidateEventCache(userId, eventType, appId);
-    await invalidateEventCache(userId, eventType);
-  } catch (error) {
-    console.error('Error updating event cache:', error);
   }
 };
 

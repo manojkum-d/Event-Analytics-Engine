@@ -17,13 +17,6 @@ export interface AnalyticsEvent {
   };
 }
 
-export interface AnalyticsResponse {
-  status: number;
-  message: string;
-  data?: any;
-  errors?: string[];
-}
-
 export interface EventSummaryRequest {
   event: string;
   startDate?: string;
@@ -89,4 +82,9 @@ export interface EventCountResult {
   count: string | number;
   browser?: string;
   os?: string;
+}
+
+export interface RawEventCount {
+  event: string;
+  count: string;
 }
