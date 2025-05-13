@@ -24,3 +24,38 @@ export interface AnalyticsResponse {
   data?: any;
   errors?: string[];
 }
+
+export interface EventSummaryRequest {
+  event: string;
+  startDate?: string;
+  endDate?: string;
+  app_id?: string;
+}
+
+export interface DeviceData {
+  mobile: number;
+  desktop: number;
+  tablet?: number;
+  [key: string]: number | undefined;
+}
+
+export interface BrowserData {
+  [key: string]: number;
+}
+
+export interface OsData {
+  [key: string]: number;
+}
+
+export interface EventSummaryResponse {
+  event: string;
+  count: number;
+  uniqueUsers: number;
+  deviceData: DeviceData;
+  browserData?: BrowserData;
+  osData?: OsData;
+  timeDistribution?: Record<string, number>;
+  referrers?: Record<string, number>;
+  startDate?: string;
+  endDate?: string;
+}
