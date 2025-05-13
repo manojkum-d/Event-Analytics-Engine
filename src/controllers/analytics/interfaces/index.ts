@@ -1,4 +1,3 @@
-// src/shared/types/analytics.ts
 export interface AnalyticsEvent {
   event: string;
   url: string;
@@ -35,8 +34,6 @@ export interface EventSummaryRequest {
 export interface DeviceData {
   mobile: number;
   desktop: number;
-  tablet?: number;
-  [key: string]: number | undefined;
 }
 
 export interface BrowserData {

@@ -1,7 +1,12 @@
 import express from 'express';
 import { collectEvent } from '../controllers/analytics';
-import { validateAnalyticsEvent } from '../shared/validators/analyticsValidator';
+import {
+  validateAnalyticsEvent,
+  validateEventSummaryRequest,
+} from '../shared/validators/analyticsValidator';
 import { validateApiKey } from '../middlewares/authMiddleware';
+import { isAuthenticated } from '../middlewares/authMiddleware';
+import * as analyticsController from '../controllers/analytics';
 
 const router = express.Router();
 
@@ -167,5 +172,89 @@ const router = express.Router();
  *                   example: An error occurred while recording the event
  */
 router.post('/collect', validateApiKey, validateAnalyticsEvent, collectEvent);
+
+/**
+ * @swagger
+ * /api/analytics/event-summary:
+ *   get:
+ *     summary: Get event analytics summary
+ *     description: Retrieves analytics summary for a specific event type
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: event
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The event type to get summary for
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date for the summary (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date for the summary (YYYY-MM-DD)
+ *       - in: query
+ *         name: app_id
+ *         schema:
+ *           type: string
+ *         description: App ID to filter by (optional)
+ *     responses:
+ *       200:
+ *         description: Analytics summary retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Analytics summary retrieved successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     event:
+ *                       type: string
+ *                       example: page_view
+ *                     count:
+ *                       type: number
+ *                       example: 3400
+ *                     uniqueUsers:
+ *                       type: number
+ *                       example: 1200
+ *                     deviceData:
+ *                       type: object
+ *                       properties:
+ *                         mobile:
+ *                           type: number
+ *                           example: 2200
+ *                         desktop:
+ *                           type: number
+ *                           example: 1200
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: App not found
+ *       500:
+ *         description: Server error
+ */
+router.get(
+  '/event-summary',
+  isAuthenticated,
+  validateEventSummaryRequest,
+  analyticsController.getEventSummary
+);
 
 export default router;

@@ -1,4 +1,4 @@
-import { check } from 'express-validator';
+import { check, query } from 'express-validator';
 import { validateResult } from './resultValidator';
 
 export const validateAnalyticsEvent = [
@@ -70,4 +70,11 @@ export const validateApiKeyHeader = [
     .withMessage('API key must be a string'),
 
   validateResult,
+];
+
+export const validateEventSummaryRequest = [
+  query('event').notEmpty().withMessage('Event type is required'),
+  query('startDate').optional().isDate().withMessage('Invalid start date format'),
+  query('endDate').optional().isDate().withMessage('Invalid end date format'),
+  query('app_id').optional().isUUID().withMessage('Invalid app ID format'),
 ];
