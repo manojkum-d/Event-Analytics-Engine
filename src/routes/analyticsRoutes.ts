@@ -15,7 +15,7 @@ const router = express.Router();
  *       in: header
  *       name: X-API-Key
  *   schemas:
- *     EventData:
+ *     Event:
  *       type: object
  *       required:
  *         - event
@@ -23,12 +23,12 @@ const router = express.Router();
  *       properties:
  *         event:
  *           type: string
- *           example: page_view
+ *           example: login_form_cta_click
  *           description: Event type to track
  *         url:
  *           type: string
  *           format: uri
- *           example: https://example.com/products
+ *           example: https://example.com/page
  *           description: URL where the event occurred
  *         referrer:
  *           type: string
@@ -38,29 +38,16 @@ const router = express.Router();
  *         device:
  *           type: string
  *           enum: [mobile, desktop, tablet]
- *           example: desktop
+ *           example: mobile
  *           description: Device type
+ *         ipAddress:
+ *           type: string
+ *           example: 192.168.1.1
  *         timestamp:
  *           type: string
  *           format: date-time
- *           example: 2024-02-25T10:30:45Z
+ *           example: 2024-02-20T12:34:56Z
  *           description: When the event occurred (ISO format)
- *         pageTitle:
- *           type: string
- *           example: Product Catalog | Example Store
- *           description: Title of the page
- *         pageLoadTime:
- *           type: integer
- *           example: 1200
- *           description: Page load time in milliseconds
- *         trackingUserId:
- *           type: string
- *           example: user_123456
- *           description: Unique identifier for the user in your system
- *         sessionId:
- *           type: string
- *           example: sess_789xyz
- *           description: Session identifier
  *         metadata:
  *           type: object
  *           description: Additional data about the event
@@ -68,66 +55,12 @@ const router = express.Router();
  *             browser:
  *               type: string
  *               example: Chrome
- *             browserVersion:
- *               type: string
- *               example: 121.0.0
- *             os:
- *               type: string
- *               example: Windows
- *             osVersion:
- *               type: string
- *               example: 11
- *             screenSize:
- *               type: string
- *               example: 1920x1080
- *             language:
- *               type: string
- *               example: en-US
- *             timezone:
- *               type: string
- *               example: UTC-5
- *     EventSummary:
- *       type: object
- *       properties:
- *         event:
- *           type: string
- *           example: page_view
- *         count:
- *           type: integer
- *           example: 3400
- *         uniqueUsers:
- *           type: integer
- *           example: 1200
- *         deviceData:
- *           type: object
- *           properties:
- *             mobile:
- *               type: integer
- *               example: 2200
- *             desktop:
- *               type: integer
- *               example: 1200
- *     UserStats:
- *       type: object
- *       properties:
- *         userId:
- *           type: string
- *           example: user_123456
- *         totalEvents:
- *           type: integer
- *           example: 150
- *         deviceDetails:
- *           type: object
- *           properties:
- *             browser:
- *               type: string
- *               example: Chrome
  *             os:
  *               type: string
  *               example: Android
- *         ipAddress:
- *           type: string
- *           example: 192.168.1.1
+ *             screenSize:
+ *               type: string
+ *               example: 1080x1920
  */
 
 /**
@@ -151,7 +84,7 @@ const router = express.Router();
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/EventData'
+ *             $ref: '#/components/schemas/Event'
  *     responses:
  *       201:
  *         description: Event recorded successfully
@@ -170,26 +103,13 @@ const router = express.Router();
  *                   type: object
  *                   properties:
  *                     event:
- *                       $ref: '#/components/schemas/EventData'
+ *                       $ref: '#/components/schemas/Event'
  *       400:
  *         description: Invalid request data
  *       401:
  *         description: Invalid API key
  *       429:
  *         description: Rate limit exceeded
- *         headers:
- *           X-RateLimit-Limit:
- *             schema:
- *               type: integer
- *             description: Maximum number of requests allowed in the window
- *           X-RateLimit-Remaining:
- *             schema:
- *               type: integer
- *             description: Number of requests left in the current window
- *           X-RateLimit-Reset:
- *             schema:
- *               type: integer
- *             description: Time when the rate limit resets (Unix timestamp)
  */
 router.post(
   '/collect',
@@ -214,7 +134,7 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
- *         example: page_view
+ *         example: login_form_cta_click
  *         description: Event type to get summary for
  *       - in: query
  *         name: startDate
@@ -235,7 +155,7 @@ router.post(
  *         schema:
  *           type: string
  *           format: uuid
- *         example: 5a425bde-e170-433f-9b42-15a7bf0a2b59
+ *         example: xyz123
  *         description: Optional filter for application ID (if not provided, fetches data across all apps)
  *     responses:
  *       200:
@@ -252,15 +172,30 @@ router.post(
  *                   type: string
  *                   example: Analytics summary retrieved successfully
  *                 data:
- *                   $ref: '#/components/schemas/EventSummary'
+ *                   type: object
+ *                   properties:
+ *                     event:
+ *                       type: string
+ *                       example: click
+ *                     count:
+ *                       type: integer
+ *                       example: 3400
+ *                     uniqueUsers:
+ *                       type: integer
+ *                       example: 1200
+ *                     deviceData:
+ *                       type: object
+ *                       properties:
+ *                         mobile:
+ *                           type: integer
+ *                           example: 2200
+ *                         desktop:
+ *                           type: integer
+ *                           example: 1200
  *       400:
  *         description: Missing or invalid parameters
  *       401:
  *         description: Invalid API key
- *       404:
- *         description: App not found
- *       429:
- *         description: Rate limit exceeded
  */
 router.get('/event-summary', validateApiKey, rateLimiter('analytics'), getEventSummary);
 
@@ -279,7 +214,7 @@ router.get('/event-summary', validateApiKey, rateLimiter('analytics'), getEventS
  *         required: true
  *         schema:
  *           type: string
- *         example: user_123456
+ *         example: user789
  *         description: Tracking user ID to get stats for
  *     responses:
  *       200:
@@ -296,15 +231,30 @@ router.get('/event-summary', validateApiKey, rateLimiter('analytics'), getEventS
  *                   type: string
  *                   example: User statistics retrieved successfully
  *                 data:
- *                   $ref: '#/components/schemas/UserStats'
+ *                   type: object
+ *                   properties:
+ *                     userId:
+ *                       type: string
+ *                       example: user789
+ *                     totalEvents:
+ *                       type: integer
+ *                       example: 150
+ *                     deviceDetails:
+ *                       type: object
+ *                       properties:
+ *                         browser:
+ *                           type: string
+ *                           example: Chrome
+ *                         os:
+ *                           type: string
+ *                           example: Android
+ *                     ipAddress:
+ *                       type: string
+ *                       example: 192.168.1.1
  *       400:
  *         description: Missing userId parameter
  *       401:
  *         description: Invalid API key
- *       404:
- *         description: User not found
- *       429:
- *         description: Rate limit exceeded
  */
 router.get('/user-stats', validateApiKey, rateLimiter('analytics'), getUserStats);
 
