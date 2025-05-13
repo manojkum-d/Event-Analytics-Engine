@@ -129,33 +129,4 @@ export const getSetSize = async (key: string): Promise<number> => {
   }
 };
 
-/**
- * Check if cache has a key
- * @param key The cache key
- */
-export const hasKey = async (key: string): Promise<boolean> => {
-  try {
-    const exists = await redisClient.exists(key);
-    return exists === 1;
-  } catch (error) {
-    console.error(`Error checking key existence (${key}):`, error);
-    return false;
-  }
-};
-
-/**
- * Set key TTL
- * @param key The cache key
- * @param ttl Time to live in seconds
- */
-export const setExpiry = async (key: string, ttl: number): Promise<boolean> => {
-  try {
-    await redisClient.expire(key, ttl);
-    return true;
-  } catch (error) {
-    console.error(`Error setting expiry (${key}):`, error);
-    return false;
-  }
-};
-
 export default redisClient;
