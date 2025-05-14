@@ -119,7 +119,7 @@ SESSION_SECRET=your_session_secret
 
 2. Start the development server:
    ```bash
-   pnpm dev
+   pnpm run dev
    ```
 
 ## Usage Examples
