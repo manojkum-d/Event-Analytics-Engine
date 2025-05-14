@@ -162,31 +162,6 @@ curl -X GET "http://localhost:3001/api/v1/analytics/event-summary?event=page_vie
   -H "X-API-Key: YOUR_API_KEY"
 ```
 
-## Project Structure
-
-```
-analytics-engine/
-├── src/
-│   ├── controllers/      # Request handlers
-│   ├── middleware/       # Express middleware
-│   ├── models/           # Sequelize models
-│   ├── routes/           # API routes
-│   ├── services/         # Business logic
-│   ├── shared/           # Shared utilities
-│   │   ├── config/       # Configuration files
-│   │   ├── types/        # TypeScript interfaces
-│   │   ├── utils/        # Utility functions
-│   │   └── validators/   # Input validation
-│   ├── app.ts            # Express app setup
-│   └── index.ts          # Application entry point
-├── docker-compose.yaml   # Docker Compose configuration
-├── dockerfile            # Docker configuration
-├── .env                  # Environment variables
-├── .env.example          # Example environment variables
-├── tsconfig.json         # TypeScript configuration
-├── package.json          # Project dependencies
-└── README.md             # Project documentation
-```
 
 ## Contributing
 
@@ -196,12 +171,6 @@ analytics-engine/
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Acknowledgments
 
-- Express.js team for the excellent web framework
-- Sequelize ORM for database interactions
-- Docker for containerization support
