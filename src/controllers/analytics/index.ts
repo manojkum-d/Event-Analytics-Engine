@@ -44,17 +44,15 @@ export const collectEvent = asyncHandler(async (req: Request, res: Response): Pr
  * Get event analytics summary
  */
 export const getEventSummary = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
-  if (!userId) {
-    throw new CustomError('Unauthorized', 401);
-  }
+  const apiKey = req.apiKey!;
+  const appId = apiKey.appId;
 
   // Get query parameters
   const queryParams: EventSummaryRequest = {
     event: req.query.event as string,
     startDate: req.query.startDate as string,
     endDate: req.query.endDate as string,
-    app_id: req.query.app_id as string,
+    app_id: (req.query.app_id as string) || appId, // Use the provided app_id or default to the API key's app
   };
 
   // Validate required parameters
@@ -65,8 +63,8 @@ export const getEventSummary = asyncHandler(async (req: Request, res: Response):
   // Check if we should bypass cache
   const bypassCache = req.query.nocache === 'true';
 
-  // Get analytics summary
-  const summary = await getEventAnalyticsSummary(userId, queryParams, bypassCache);
+  // Get analytics summary using the API key's associated user ID
+  const summary = await getEventAnalyticsSummary(apiKey.userId, queryParams, bypassCache);
 
   res.status(200).json(
     httpResponse({
@@ -81,17 +79,15 @@ export const getEventSummary = asyncHandler(async (req: Request, res: Response):
  * Get user statistics
  */
 export const getUserStats = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
-  if (!userId) {
-    throw new CustomError('Unauthorized', 401);
-  }
+  const apiKey = req.apiKey!;
 
   const trackingUserId = req.query.userId as string;
   if (!trackingUserId) {
     throw new CustomError('User ID is required', 400);
   }
 
-  const stats = await getUserStatistics(userId, trackingUserId);
+  // Use the API key's associated user ID for authorization
+  const stats = await getUserStatistics(apiKey.userId, trackingUserId);
 
   res.status(200).json(
     httpResponse({
